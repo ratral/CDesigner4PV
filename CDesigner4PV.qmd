@@ -1,0 +1,40 @@
+---
+title: "White Paper: Proposal for a design of Cylinder for plunger Control Valves"
+format:
+  html:
+    toc: true
+    toc-depth: 2
+    toc-title: Contents
+    number-sections: true
+    number-depth: 3
+    html-math-method: katex
+    css: styles.css
+---
+
+# The purpose of this white paper
+
+This "White paper" will help you understand the difficulties and simplify designing the cylinders for plunger valves. Discharge coefficients for flow through different multi-hole cylinders will be evaluated.
+
+The calculations is based on the similarity of the control cylinders to the orifice plates. The model will be limited to turbulent flow models to predict velocities, pressure drop, cylinder discharge coefficient, and flow characteristics.
+
+This document also presents a mathematical model for designing perforated cylinders that allow installed linear flow characteristics.
+
+Later it will be necessary to carry out tests under laboratory conditions. The experimental results must be compared and analyzed to optimize the proposed models.
+
+# Basic theory
+
+## Plunger valves
+
+
+## Volume and Surface Area of a Cylinder
+
+A cylinder is a solid figure with two parallel circles of the same size at the top and bottom. The top and bottom of a cylinder are called bases. The height $h$ of a cylinder is the distance between the two bases. We will work with all the cylinders here. The sides and the height, $h$, will be perpendicular to the bases.
+
+A cylinder has two circular bases of equal size. The height is the distance between the bases. For a cylinder, the area of the base, $B$, is the area of its circular base, $\pi \cdot r^2$. Therefore the volume of the cylinder is $V = B \cdot h$.
+
+The distance around the edge of the cylinder is the circumference of the cylinder's base. It is also the length L of the rectangular area. The height of the cylinder is the width h of the rectangular area. So the area of the label can be represented as:
+
+$$
+  L = 2 \cdot \pi \cdot r \\
+  A = 2 \cdot h \cdot \pi \cdot r
+$$

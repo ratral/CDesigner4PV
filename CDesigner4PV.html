@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en"><head>
+
+<meta charset="utf-8">
+<meta name="generator" content="quarto-0.9.330">
+
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
+
+
+<title>White Paper: Proposal for a design of Cylinder for plunger Control Valves</title>
+<style>
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+<script src="CDesigner4PV_files/libs/clipboard/clipboard.min.js"></script>
+<script src="CDesigner4PV_files/libs/quarto-html/quarto.js"></script>
+<script src="CDesigner4PV_files/libs/quarto-html/popper.min.js"></script>
+<script src="CDesigner4PV_files/libs/quarto-html/tippy.umd.min.js"></script>
+<script src="CDesigner4PV_files/libs/quarto-html/anchor.min.js"></script>
+<link href="CDesigner4PV_files/libs/quarto-html/tippy.css" rel="stylesheet">
+<link id="quarto-text-highlighting-styles" href="CDesigner4PV_files/libs/quarto-html/quarto-syntax-highlighting.css" rel="stylesheet">
+<script src="CDesigner4PV_files/libs/bootstrap/bootstrap.min.js"></script>
+<link href="CDesigner4PV_files/libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
+<link href="CDesigner4PV_files/libs/bootstrap/bootstrap.min.css" rel="stylesheet">
+
+  <script defer="" src="https://cdn.jsdelivr.net/npm/katex@0.15.1/dist/katex.min.js"></script>
+  <script>document.addEventListener("DOMContentLoaded", function () {
+ var mathElements = document.getElementsByClassName("math");
+ var macros = [];
+ for (var i = 0; i < mathElements.length; i++) {
+  var texText = mathElements[i].firstChild;
+  if (mathElements[i].tagName == "SPAN") {
+   katex.render(texText.data, mathElements[i], {
+    displayMode: mathElements[i].classList.contains('display'),
+    throwOnError: false,
+    macros: macros,
+    fleqn: false
+   });
+}}});
+  </script>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.15.1/dist/katex.min.css">
+
+<link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+
+<div id="quarto-content" class="page-columns page-rows-contents page-layout-article">
+<div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
+  <nav id="TOC" role="doc-toc">
+    <h2 id="toc-title">Contents</h2>
+   
+  <ul>
+  <li><a href="#the-purpose-of-this-white-paper" id="toc-the-purpose-of-this-white-paper" class="nav-link active" data-scroll-target="#the-purpose-of-this-white-paper"> <span class="header-section-number">1</span> The purpose of this white paper</a></li>
+  <li><a href="#basic-theory" id="toc-basic-theory" class="nav-link" data-scroll-target="#basic-theory"> <span class="header-section-number">2</span> Basic theory</a>
+  <ul class="collapse">
+  <li><a href="#plunger-valves" id="toc-plunger-valves" class="nav-link" data-scroll-target="#plunger-valves"> <span class="header-section-number">2.1</span> Plunger valves</a></li>
+  <li><a href="#volume-and-surface-area-of-a-cylinder" id="toc-volume-and-surface-area-of-a-cylinder" class="nav-link" data-scroll-target="#volume-and-surface-area-of-a-cylinder"> <span class="header-section-number">2.2</span> Volume and Surface Area of a Cylinder</a></li>
+  </ul></li>
+  </ul>
+</nav>
+</div>
+<main class="content" id="quarto-document-content">
+
+<header id="title-block-header" class="quarto-title-block default">
+<div class="quarto-title">
+<h1 class="title">White Paper: Proposal for a design of Cylinder for plunger Control Valves</h1>
+</div>
+
+
+
+
+
+<div class="quarto-title-meta">
+
+    
+    
+  </div>
+  
+
+</header>
+
+<section id="the-purpose-of-this-white-paper" class="level1" data-number="1">
+<h1 data-number="1"><span class="header-section-number">1</span> The purpose of this white paper</h1>
+<p>This “White paper” will help you understand the difficulties and simplify designing the cylinders for plunger valves. Discharge coefficients for flow through different multi-hole cylinders will be evaluated.</p>
+<p>The calculations is based on the similarity of the control cylinders to the orifice plates. The model will be limited to turbulent flow models to predict velocities, pressure drop, cylinder discharge coefficient, and flow characteristics.</p>
+<p>This document also presents a mathematical model for designing perforated cylinders that allow installed linear flow characteristics.</p>
+<p>Later it will be necessary to carry out tests under laboratory conditions. The experimental results must be compared and analyzed to optimize the proposed models.</p>
+</section>
+<section id="basic-theory" class="level1" data-number="2">
+<h1 data-number="2"><span class="header-section-number">2</span> Basic theory</h1>
+<section id="plunger-valves" class="level2" data-number="2.1">
+<h2 data-number="2.1" class="anchored" data-anchor-id="plunger-valves"><span class="header-section-number">2.1</span> Plunger valves</h2>
+</section>
+<section id="volume-and-surface-area-of-a-cylinder" class="level2" data-number="2.2">
+<h2 data-number="2.2" class="anchored" data-anchor-id="volume-and-surface-area-of-a-cylinder"><span class="header-section-number">2.2</span> Volume and Surface Area of a Cylinder</h2>
+<p>A cylinder is a solid figure with two parallel circles of the same size at the top and bottom. The top and bottom of a cylinder are called bases. The height <span class="math inline">h</span> of a cylinder is the distance between the two bases. We will work with all the cylinders here. The sides and the height, <span class="math inline">h</span>, will be perpendicular to the bases.</p>
+<p>A cylinder has two circular bases of equal size. The height is the distance between the bases. For a cylinder, the area of the base, <span class="math inline">B</span>, is the area of its circular base, <span class="math inline">\pi \cdot r^2</span>. Therefore the volume of the cylinder is <span class="math inline">V = B \cdot h</span>.</p>
+<p>The distance around the edge of the cylinder is the circumference of the cylinder’s base. It is also the length L of the rectangular area. The height of the cylinder is the width h of the rectangular area. So the area of the label can be represented as:</p>
+<p><span class="math display">
+  L = 2 \cdot \pi \cdot r \\
+  A = 2 \cdot h \cdot \pi \cdot r
+</span></p>
+</section>
+</section>
+
+</main>
+<!-- /main column -->
+<script id="quarto-html-after-body" type="application/javascript">
+window.document.addEventListener("DOMContentLoaded", function (event) {
+  const icon = "";
+  const anchorJS = new window.AnchorJS();
+  anchorJS.options = {
+    placement: 'right',
+    icon: icon
+  };
+  anchorJS.add('.anchored');
+  const clipboard = new window.ClipboardJS('.code-copy-button', {
+    target: function(trigger) {
+      return trigger.previousElementSibling;
+    }
+  });
+  clipboard.on('success', function(e) {
+    // button target
+    const button = e.trigger;
+    // don't keep focus
+    button.blur();
+    // flash "checked"
+    button.classList.add('code-copy-button-checked');
+    var currentTitle = button.getAttribute("title");
+    button.setAttribute("title", "Copied!");
+    setTimeout(function() {
+      button.setAttribute("title", currentTitle);
+      button.classList.remove('code-copy-button-checked');
+    }, 1000);
+    // clear code selection
+    e.clearSelection();
+  });
+  function tippyHover(el, contentFn) {
+    const config = {
+      allowHTML: true,
+      content: contentFn,
+      maxWidth: 500,
+      delay: 100,
+      arrow: false,
+      appendTo: function(el) {
+          return el.parentElement;
+      },
+      interactive: true,
+      interactiveBorder: 10,
+      theme: 'quarto',
+      placement: 'bottom-start'
+    };
+    window.tippy(el, config); 
+  }
+  const noterefs = window.document.querySelectorAll('a[role="doc-noteref"]');
+  for (var i=0; i<noterefs.length; i++) {
+    const ref = noterefs[i];
+    tippyHover(ref, function() {
+      let href = ref.getAttribute('href');
+      try { href = new URL(href).hash; } catch {}
+      const id = href.replace(/^#\/?/, "");
+      const note = window.document.getElementById(id);
+      return note.innerHTML;
+    });
+  }
+  var bibliorefs = window.document.querySelectorAll('a[role="doc-biblioref"]');
+  for (var i=0; i<bibliorefs.length; i++) {
+    const ref = bibliorefs[i];
+    const cites = ref.parentNode.getAttribute('data-cites').split(' ');
+    tippyHover(ref, function() {
+      var popup = window.document.createElement('div');
+      cites.forEach(function(cite) {
+        var citeDiv = window.document.createElement('div');
+        citeDiv.classList.add('hanging-indent');
+        citeDiv.classList.add('csl-entry');
+        var biblioDiv = window.document.getElementById('ref-' + cite);
+        if (biblioDiv) {
+          citeDiv.innerHTML = biblioDiv.innerHTML;
+        }
+        popup.appendChild(citeDiv);
+      });
+      return popup.innerHTML;
+    });
+  }
+});
+</script>
+</div> <!-- /content -->
+
+
+
+</body></html>

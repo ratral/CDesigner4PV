@@ -1,0 +1,71 @@
+## Cylinders for a valve DN  `r df$dn.valve`
+
+### Template for drilling the cylinder
+
+Production Details:
+
+-   **Valve Diameter:** `r df$dn.valve` $mm$
+-   **Cylinder External Diameter:** `r df$dn.ext` $mm$
+-   **Thickness:** `r df$thickness` $mm$
+-   **Material:** 304 Stainless Steel
+-   **Metal Sheet Length:** `r df$length` $mm$
+-   **Metal Sheet Width:** `r round(df$circumf,1)` $mm$
+-   **Number of rails/cylinder areas:** `r df$rail.n`
+-   **Rail width:** `r df$rail.width` ° $degrees$
+-   **Net Area:** `r format(df$area.net, digits=2, big.mark="," , nsmall=2)` $mm^2$
+-   **Net Area relative to the valve area:** `r sprintf("%.1f %%", 100*df$area.relative)`
+
+```{r echo=FALSE}
+  p1 <- plot.area.cylinder(dim.cylinder,dn, dist.type = 90)
+  p2 <- plot.area.cylinder(dim.cylinder,dn, dist.type = 45)
+  
+  grid.arrange(p1, p2, ncol=1, nrow=2 ,
+               top =  paste0("Template for perforations of the cylinder for Valve DN-", dn, " mm "),
+               bottom = textGrob( "Dr.Trujillo", gp = gpar(fontface = 3, fontsize = 9),
+                                  hjust = 1, x = 1 ))
+```
+
+
+### Mould for the area of perforation
+
+```{r  echo=FALSE}
+  total.orifices45      <- (df$h.orifices*df$v.orifices) + (df$h.orifices-df$rail.n)*(df$v.orifices - 1)
+  horizontal.orifices45 <- 2 * df$h.orifices - 1
+  vertical.orifices45   <- 2 * df$v.orifices - 1
+```
+
+
+Details:
+
+|                                           |  Level round hole 90° (Straight Line)                              | Staggered round hole 45°                                          | 
+|-------------------------------------------|-------------------------------------------------------------------:|------------------------------------------------------------------:|
+| **Diameter of the orifices:**             | `r df$dn.h90` $mm$                                                 | `r df$dn.h45` $mm$                                                |
+| **Total number of orifices:**             | `r df$h.orifices*df$v.orifices` $units$                            | `r total.orifices45` $units$                                      |
+| **Horizontal Number of orifices:**        | `r df$h.orifices/df$rail.n`     $units$                            | `r horizontal.orifices45` $units$                                 |
+| **Vertical Number of orifices:**          | `r df$v.orifices`               $units$                            | `r vertical.orifices45` $units$                                   |
+| **Total flow area:**                      | `r format(df$area.h90, digits=2, big.mark="," , nsmall=2)` $mm^2$  | `r format(df$area.h45, digits=2, big.mark="," , nsmall=2)` $mm^2$ |
+| **Flow area relative to the valve area:** | `r sprintf("%.1f %%", 100*df$area.hole.valve90)`                   | `r sprintf("%.1f %%", 100*df$area.hole.valve45)`                  |
+
+
+```{r echo=FALSE, out.width = '100%'}
+  # p1 <- plot.orifices(dim.cylinder, dn, dist.type = 90)
+  # p2 <- plot.orifices(dim.cylinder, dn, dist.type = 45)
+  # p3 <- plot.slott(df, dn, dist.type = 90)
+  # 
+  # grid.arrange(p1, p2, p3, ncol=1, nrow=3 ,
+  #              top =  paste0("Template for perforations area of the cylinder for Valve DN-", dn, " mm "),
+  #              bottom = textGrob( "Dr.Trujillo", gp = gpar(fontface = 3, fontsize = 9),
+  #                                 hjust = 1, x = 1 ))  
+```
+
+```{r echo=FALSE, out.width = '200%'}
+  plot.orifices(dim.cylinder, dn, dist.type = 90)
+```
+
+```{r echo=FALSE, out.width = '200%'}
+  plot.orifices(dim.cylinder, dn, dist.type = 45)
+```
+
+```{r echo=FALSE, out.width = '200%'}
+  plot.slott(df, dn, dist.type = 90)
+```

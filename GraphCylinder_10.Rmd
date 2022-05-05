@@ -1,0 +1,719 @@
+---
+title: "White Paper: Proposal for a design of Cylinder for plunger Control Valves"
+author: "Dr. Raúl Trujillo Álvarez"
+date: "`r format(Sys.time(), '%d %B, %Y')`"
+output:   
+  html_document:
+    toc: true
+    toc_float: true
+    number_sections: true
+---
+
+```{r include=FALSE}
+  library(tidyverse)
+  library(gridExtra)
+  library(grid)
+  library(here)
+  library(ggforce)
+  library(knitr)
+  library(kableExtra)
+  library(wcontrolvalve)
+
+  source(here::here("functionOrifices.R"))
+```
+
+```{r include=FALSE}
+  # Intern diameter of the cylinders
+
+  #' @param dn.valve in mm diameter of the valve
+  #' @param int.dn in mm internal diameter of the valve
+  #' @param length in mm cylinder effective length
+  #' @param length.useful in mm useful length
+  #' @param thickness in mm cylinder thickness
+  #' @param rail.n number of rails
+  #' @param rail.width rail  width in degrees
+  #' @param h.orifices
+  #' @param v.orifices
+  #' @param circumf external Circumference of the circular base
+  #' @param length.rail length of the Rail
+  #' @param h.length.u.areas length of one the useful areas
+  #' @param area.gross The total external area of a cylinder
+  #' @param area.useful The useful external area of a cylinder
+  #' @param area.net The net external area of a cylinder
+  #' @param area.valve
+  #' @param area.relative ext.net.area/valve.Area
+  #' @param h.holes number of possible horizontal holes (20 possible holes, spacing 1.5 orifice dn)
+  #' @param v.holes number of possible vertical holes (10 possible holes, spacing 1.5 orifice dn)
+  #' @param dn.h90
+  #' @param dn.h45
+  #' @param c.hor90
+  #' @param c.vert90
+  #' @param total.n.orif90
+  #' @param total.n.orif45
+  #' @param area.h90
+  #' @param area.h45
+  #' @param area.hole.cylinder90
+  #' @param area.hole.valve90
+  #' @param area.hole.cylinder45
+  #' @param area.hole.valve45
+
+  dim.cylinder <-  tribble(
+     ~dn.valve, ~dn.ext, ~length, ~length.useful, ~thickness, ~rail.n, ~rail.width, ~h.orifices, ~v.orifices, 
+     200,       157,      84.0,       67,           12,         3,       20,          60,            10,
+     300,       237,     115.0,      100,           13,         3,       20,          60,            10,
+     500,       397,     169.0,      152,           21,         3,       20,          60,            10,
+     600,       496,     170.0,      157,           26,         3,       20,          60,            10    
+     )
+
+  use.factor <- 1.50  # This factor determine the distance between orifices !!!!
+
+  dim.cylinder <- dim.cylinder %>% 
+    mutate(circumf        = pi * (dn.ext),
+           length.rail    = rail.width * (pi / 180) * (dn.ext) / 2) %>% 
+    mutate(h.length.u.areas = (circumf - length.rail * rail.n)/rail.n,  
+           area.net       = (circumf - rail.n * length.rail) * length.useful,
+           area.valve     = pi/4 * dn.valve^2 ) %>% 
+    mutate(area.relative  =  area.net/area.valve,
+           h.holes        = h.length.u.areas / (h.orifices/rail.n * use.factor), 
+           v.holes        = length.useful   /  (v.orifices * use.factor)) %>%  
+    mutate(dn.h90         = ceiling(pmin(h.holes, v.holes)),
+           dn.h45         = dn.h90 - 1) %>%  # minus 1mm
+    mutate(c.hor90        = round(h.length.u.areas/(h.orifices/rail.n),1),
+           c.vert90       = round(length.useful/v.orifices),1) %>% 
+    mutate(total.n.orif90 = h.orifices * v.orifices,
+           total.n.orif45 = h.orifices * v.orifices + (h.orifices - rail.n)*(v.orifices - 1)) %>% 
+    mutate(area.h90 = (pi * dn.h90^2)/4 * total.n.orif90,
+           area.h45 = (pi * dn.h45^2)/4 * total.n.orif45) %>% 
+    mutate(area.hole.valve90    = 4 * area.h90 / (pi*dn.valve^2),
+           area.hole.valve45    = 4 * area.h45 / (pi*dn.valve^2))
+
+  # Area to be drilled
+  df <- dim.cylinder %>% 
+    select(dn.valve, dn.h90, dn.h45, area.valve, thickness,
+           total.n.orif90, total.n.orif45, area.hole.valve90, area.hole.valve45) %>% 
+    mutate(max.perf90 = floor(area.hole.valve90*100),
+           max.perf45 = floor(area.hole.valve45*100)) %>%
+    select(-area.hole.valve90, -area.hole.valve45 )
+
+
+  drill.area  <- c(7.5, 10, 12.5, 15, 20, 25, 30, 35, 40)
+  dn.valve    <- as_vector(dim.cylinder$dn.valve) 
+  
+  tab.drill.90 <- expand.grid(dn.valve    = dn.valve, 
+                              perforation = c(90), 
+                              drill.area  = drill.area)
+  
+  tab.drill.45 <- expand.grid(dn.valve    = dn.valve, 
+                              perforation = c(45), 
+                              drill.area  = drill.area )
+  
+  tab.drill <- merge(tab.drill.90, tab.drill.45, all = TRUE)
+  
+
+  tab.drill <- tab.drill %>% 
+    left_join(df,  by = "dn.valve") %>% 
+    mutate(dn.orifice    = ifelse(perforation == 90, dn.h90, dn.h45),
+           total.n.orif  = ifelse(perforation == 90, total.n.orif90, total.n.orif45),
+           max.perf.area = ifelse(perforation == 90, max.perf90, max.perf45)) %>% 
+    select("dn.valve", "perforation", "drill.area", 
+           "dn.orifice",  "total.n.orif", "max.perf.area", "thickness") %>% 
+    filter(drill.area <= max.perf.area) %>% 
+    mutate( n.orifice.drill = round(((pi/4 * dn.valve^2) * drill.area/100)/
+                                    (pi/4 * dn.orifice^2),0)) %>% 
+    mutate(dn.radio = sqrt(n.orifice.drill) * (dn.orifice/dn.valve),
+           relat.thickness = thickness/dn.orifice,
+           zeta.cylinder = z.orifice(dn.valve, dn.orifice,n.orifice.drill,thickness),
+           kv = kv_value(dn.valve, zeta.cylinder),
+           velicity.orif =  (kv/3600)/(pi/4*(dn.orifice/1000)^2)) %>% 
+    mutate(cd = 1/ sqrt(zeta.cylinder + 1)) %>% 
+    mutate(sigma.i = sigma.inc(cd),
+           sigma.c = sigma.cons(cd))
+
+    rm(tab.drill.90, tab.drill.45, df)    
+```
+
+# The purpose of this white paper
+
+These papers pretend to help you understand the difficulties and simplify designing the cylinder for plunger valves and the opportunity we face. I want to provide you with a quality white paper that helps to you in the future.
+
+This article suggests a simplified multi-hole cylinder design and the flow characteristics caused by a flow of water through different multi-hole configurations. Discharge coefficients for flow through multi-hole cylinders are evaluated. the orifice cylinder with equivalent perforated flow area to the valve flow area (AR) of 7.5% (AR-7.5%), 10% (AR-10%), 12.5% (AR-12.5%), 15% (AR-15%), 20% (AR-20%), 30% (AR-30%) and 40% (AR-40%). Parameters investigated were the number of holes, orifice pressure drop, and Reynolds number. The present work results from cylinders' similarity to an orifice plate, a turbulence flow model to predict velocities, pressure loss, and discharge coefficient cylinder. Using multiple holes in a cylinder shows that the number of holes, orifice diameter, and ratio to the valve diameter influence the discharge coefficients. Later need to be conducted tests under laboratory conditions. The experimental results need to be compared with numerical modeling, and the conclusions need to be discussed. 
+
+This document will analyze different Cylinder types for different valve diameters and two flow characteristics (lineal and Equal percentage) for every cylinder flow area (for example, a vave DN 300mm with an AR-7.5 cylinder with an equal percent and lineal flow characteristics).
+
+
+# Cylinders
+
+## Description of the geometry of the cylinders to be analyzed and its dimensions
+
+For this document, we will assume the following cylinder measurements:
+
+
+```{r echo=FALSE}
+
+  col.names <- c("DN", "Area", "DN Cyl.", "Length", "Length Useful", 
+                 "circumf", "Leng.Guides", "Thickness", "Guides No.", 
+                 "Area Net", "Straight Line", "45° Staggered")
+
+  dim.cylinder %>% 
+    select("dn.valve", "area.valve", "dn.ext", "length", "length.useful", 
+           "circumf", "length.rail", "thickness", "rail.n", "area.net", "total.n.orif90", "total.n.orif45") %>% 
+    mutate(area.valve    = format(round(area.valve,0), big.mark=","),
+           length.useful = format(length.useful, big.mark=","),
+           length.rail   = format(round(length.rail,2), big.mark=","),
+           circumf       = format(round(circumf,2), big.mark=","), 
+           area.net      = format(round(area.net,0), big.mark=",")) %>%
+    kbl(caption = "Cylinder dimensions", col.names = col.names, align = "r") %>%
+    add_header_above(c("Valve"=2, "Cylinder" = 8, "Maximum no. of Orifice"=2)) %>% 
+    kable_styling(bootstrap_options = c("striped", "hover", "condensed"))%>%
+    footnote(general = "Description of the columns. ",
+             number = c("DN: Valve diameter (mm); ", 
+                        "Area Valve: Inflow area of the valve (mm^2)",
+                        "DN Cyl.: Extern diameter of the cylinder (mm)",
+                        "Length Cyl.: The effective length of the  cylinder (mm)",
+                        "Length useful: The useful length of the  cylinder (mm)",
+                        "Circum.: External Circumference length of the cylinder (mm)",
+                        "Leng.Guides: Length of the Sliding guides (mm)",
+                        "Thickness: Cylinder thickness (mm)",
+                        "Guides No.: Number of guides required for the cylinder",
+                        "Net Area: Net drillable area of the cylinder (mm^2)",
+                        "Straight Line: maximum number of orificein a Straight Line distribution",
+                        "45° Staggered: maximum number of orificein a 45° Staggered distribution"))
+```
+
+```{r cylinder_01, echo=FALSE, fig.cap="Cylinder type", out.width = '50%'}
+  knitr::include_graphics(here::here("image","cylinder_001.png"))
+```
+
+```{r cylinder_02, echo=FALSE, fig.cap="Cylinder type AA cut", out.width = '50%'}
+  knitr::include_graphics(here::here("image","cylinder_002.png"))
+```
+
+```{r UsefulSurface, echo=FALSE, fig.cap="Useful surfaces/areas", out.width = '150%'}
+  knitr::include_graphics(here::here("image","UsefulSurface.png"))
+```
+
+## Types and template of perforation 
+
+The template must meet the following conditions:
+
+  1. Two different types of drilling. 
+      - Round Perforation - 45 Degree Staggered, and 
+      - Round Perforation - Straight Line.
+  2. The number of total holes will remain constant regardless of valve diameter.
+  3. The template only defines/mark the maximum number of drillable holes.
+  4. The number of total perforable holes is defined by the type of drilling chosen.
+      - Straight Line (3x20) x 10
+      - 
+  4. The total number of holes to be drilled will be defined as a function of equivalent perforated flow area _AR_.
+     - 7.5% (AR-7.5%), 10% (AR-10%), 12.5% (AR-12.5%), 15% (AR-15%), 20% (AR-20%), 30% (AR-30%) and 40% (AR-40%)
+  5. The number of holes to be drilled per line depends on the type of inherent flow  characteristics required for the valve.
+     - For example, it will be possible to have two types of cylinders for DN-300 valves with a perforated flow area AR-20% but with different flow characteristics: "linear" and "equal percentages".
+
+
+Open area is a ratio that reflects how much of the sheet is occupied by holes, normally expressed by percent. 
+
+
+
+
+
+# Basic theory
+
+## Volume and Surface Area of a Cylinder
+
+A cylinder is a solid figure with two parallel circles of the same size at the top and bottom. The top and bottom of a cylinder are called bases. The height $h$ of a cylinder is the distance between the two bases. We will work with all the cylinders here. The sides and the height, $h$, will be perpendicular to the bases.
+
+A cylinder has two circular bases of equal size. The height is the distance between the bases. For a cylinder, the area of the base, $B$, is the area of its circular base, $\pi \cdot r^2$. Therefore the volume of the cylinder is $V = B \cdot h$.
+
+The distance around the edge of the cylinder is the circumference of the cylinder's base. It is also the length L of the rectangular area. The height of the cylinder is the width h of the rectangular area. So the area of the label can be represented as:
+
+$$
+  L = 2 \cdot \pi \cdot r \\
+  A = 2 \cdot h \cdot \pi \cdot r
+$$
+## Arc Length Formula
+
+The length of an arc can be calculated using different formulas based on the unit of the central angle of the arc. The angle is in degrees or radians, and accordingly, we calculate the arc length of a circle. For a circle, the arc length formula is $\theta$ times the radius of a circle.
+
+The arc length formula in radians can be expressed as,
+
+$$
+  arc.length = θ \cdot (dn/2)
+$$
+
+when $\theta$ is in *radian*.
+
+$$
+  arc.length = \theta \cdot (π/180) \cdot (dn/2)
+$$
+where $\theta$ is in degree,
+
+where,
+
+-   $arc.length =$ Length of an Arc
+-   $\theta =$ Central angle of Arc
+-   $(dn/2) =$ Radius of the circle
+
+
+## Curve Tangential to Two Lines
+
+https://www.youtube.com/watch?v=Ls_y98dcUJo   !!!!
+https://www.youtube.com/watch?v=4nMKeJ-f0Qw
+
+
+
+## Valve Characteristics -- Equal percentage characteristic (or logarithmic characteristic)
+
+Inherent Control Valve Flow Characteristics:
+
+The most common characteristics are shown in the figure above. The percent of flow through the valve is plotted against the valve stem position. The curves shown are typical of those available from valve manufacturers. These curves are based on the constant pressure drop across the valve and are called inherent flow characteristics.
+
+  - Linear - flow capacity increases linearly with valve travel.
+  - Equal percentage - flow capacity increases exponentially with valve trim travel. Equal increments of valve travel produce equal percentage changes in the existing Kv.
+  - A modified parabolic characteristic is approximately midway between linear and equal-percentage characteristics. It provides fine throttling at low flow capacity and approximately linear characteristics at higher flow capacity.
+  - Hyperbolic
+  - Square Root
+  
+The majority of control applications are with valves with linear, equal-percentage, or modified-flow characteristics.
+
+The *inherent valve characteristics* for an equal percentage valve is exponential in nature and is normally given by valve manufacturers in the form:
+
+$$
+  f(x)= R^{(x-1)}
+$$ 
+
+where $R$ is a constant for the cylinder.
+
+
+## Installed Control Valve Flow Characteristics
+
+When valves are installed with pumps, piping and fittings, and other process equipment, the pressure drop across the valve will vary as the plug moves through its travel. When the actual flow is plotted against the valve opening, the curve is called the Installed Flow Characteristic. In most applications, when the valve opens and the resistance due to fluids flow decreases, the pressure drop across the valve. This moves the inherent characteristic:
+
+  - A linear inherent curve will, in general, resemble a quick opening characteristic
+  - An equal percentage curve will, in general, resemble a linear curve.
+
+There is not one flow characteristic that is better than the other. It is your goal to achieve the desired characteristic.
+
+Linear Characteristics:
+
+  - Used in liquid level or flow loops.
+  - Used in systems where the pressure drop across the valve is expected to remain relatively constant (i.e., steady-state systems).
+  - Used when the pressure drop across the valve is a large proportion of the total pressure drop.
+
+Equal Percentage Characteristics:
+
+  - Used in processes where significant changes in pressure drop are expected.
+  - Used in processes where the valve permits a small percentage of the total pressure drop.
+  - Used in temperature and pressure control loops.
+
+Quick Opening Characteristics:
+
+  - Used for frequent on-off service.
+  - Used for processes where “instantly” large flow is needed (i.e., safety systems or cooling water systems).
+
+Two rules of thumb for choosing the correct flow characteristic:
+
+  - If most pressure drops are taken through the valve and the upstream pressure is constant, a linear characteristic will better control.
+  - If the piping and downstream equipment cause significant resistance to the system, the equal percentage will provide better control.
+
+
+## Pressure losses through perforated plates
+
+An Orifices Plate is a plate with a hole or moor holes introduced in the pipe to determine flow discharge or generate an energy transmutation phenomenon, accompanied by losses. The paper elaborates analysis of various flow parameters associated with Multi-hole orifice plate and their physical existence in the flow.
+
+In other words, a Multi-hole orifice plate is a plate with multiple holes, whose number of holes and the hole diameters vary depending on the desired flow rate and pressure drop through the system. The multi-hole plate has peculiar characteristics which make it exclusively desired for complex flow analysis where the outcomes are expected to be near accurate.
+
+Perforated plates are commonly used to control and maintain the efficiency of pressurized systems, being preferred over other hydraulic devices for their simple geometry and low cost. Generally, perforated plates are installed upstream to flowmeters to remove swirl and correct a distorted flow profile or, coupled with a control valve, used for preventing cavitation phenomena, assuring safe operating conditions.
+
+Perforated plate hydraulics have been extensively researched, and this is well documented in the technical literature. Most of the investigations were aimed at investigating their functionality as flow and pressure conditioners. Few investigations deal with the dissipation characteristics of perforated plates, mainly focused on the occurrence and development of the cavitation phenomena.
+
+The geometrical characteristics of the orifices considered are:
+
+  - $d_h$: Orifice diameter 
+  - $n_h$: number of orifices
+  - $t$: thickness of the plate
+  - $D$: diameter of the pipe
+  - $\beta = \sqrt{n_h} \cdot (d_h/D)$: equivalent diameter ratio
+  - $t/d_h$: relative thickness
+  
+The dissipation characteristics of perforated plates are usually quantified using the pressure loss coefficient, defined as:
+
+$$
+  \zeta = \frac{P_1 - P_2}{(1/2 \cdot \rho \cdot v^2 )} = \frac{\Delta P}{v^2 / (2\cdot g)}
+$$
+
+$P_1$ and $P_2$ are the pressure upstream and downstream of the device, $v$ is the pipe bulk-mean velocity, and $\rho$ is the fluid density. 
+
+```{r GeometricalSketch, echo=FALSE, fig.cap="Geometrical sketch of the plate", out.width = '50%'}
+  knitr::include_graphics(here::here("image","GeometricalSketch.png"))
+```
+
+When no cavitation occurs, the pressure loss coefficient is influenced by the geometry of the plate, defined, for a square-edged plate with holes of uniform size, by the following characteristics:
+
+  1. the porosity of the screen, i.e., the ratio of the open area to the overall pipe section, usually expressed by means of its square root $\beta$ (equivalent diameter ratio); 
+  2. the plate thickness $t$, usually taken into account by the relative thickness $t/d_h$, $d_h$ being the hole diameter;
+  3. the number of holes $n_h$; 
+  4. the distribution of the holes, usually quantified by the pitch $P$, i.e., the minimum distance between two adjacent holes.
+
+
+The Reynolds number $(R_e)$ plays an important role in the dissipation characteristics of perforated plates. There are different ways to calculate the Reynolds number for perforated plates:
+
+  - in terms of pipe diameter $D$ and pipe bulk mean velocity $v_p$ : $R_{e_p}  = (v_p \cdot D) / \upsilon$
+  - in terms of hole diameter $d_h$ and hole bulk mean velocity $v_h$ : $R_{e_h}  =(v_h \cdot d_h) / \upsilon$ 
+  
+$$
+  R_{e_p} = R_{e_h} \cdot \beta \cdot \sqrt{n_h}
+$$
+
+
+Whatever Reynolds number is considered, the dependence between the pressure loss coefficient $\zeta$ and the Reynolds number is qualitatively sketched in the figure. Under no cavitating conditions, as Reynolds increases, two different regions can be identified: a low-Reynolds region (1), in which $\zeta$ is affected by the Reynolds number; and a self-similarity region (2), in which $\zeta$ is almost constant concerning the Reynolds number.
+
+```{r Eu_Reynolds, echo=FALSE, fig.cap="Qualitative trend of the the pressure loss coefficient as a function of Reynolds number.", out.width = '50%'}
+  knitr::include_graphics(here::here("image","Eu_Reynolds.png"))
+```
+
+Different formulas for evaluating the pressure loss coefficient in the self-similarity region with respect to $R_e$ (region (2) in Fig.) are available. All of them express $\zeta$ as a function of the equivalent diameter ratio $\beta$, in some cases, the relative thickness $t/d_h$ and the friction factor $\lambda$, valid for $R_{e_h} > 10^5$ and $t/d_h > 0.015$, therefore assuming that the effect of number and disposition of the holes is negligible.
+
+Only the pressure loss coefficient trend as a function of the relative thickness is generally well represented by the equations proposed, which considers only the effect of equivalent diameter ratio and relative thickness. If the holes' number and disposition become more significant, these equations partially fail their prediction skill, especially at low $\beta$ and relative thickness values $t/d_h$.
+
+Two other parameters influence the head losses of a perforated plate: the vapor pressure $P_v$, which is, in turn, a function of the fluid temperature $T$, and the pressure at the reference section upstream of the device $P_2$. The other variables being the same, these parameters provide the conditions under which cavitation occurs, and thus they may directly affect the dissipation across the device. Nevertheless, this document focuses on a no cavitation regime, where the $P_v$ and $P_2$ don't directly affect the losses.
+
+As stated before, Idelcick (1986) and Miller (1990) proposed equations to model the loss coefficient ($\zeta$). Miller (1990) introduced in one-dimensional continuity momentum a correction coefficient $C_0$, depending on the relative  thickness $t/d_h$ : 
+
+$$
+  \zeta = \frac{C_0 \cdot (1-C_C \cdot \beta^2)^2}{C_c^2 \cdot \beta^4}
+$$
+
+In which $C_C$ is the contraction coefficient of the jets. Later, Fratino (2000) developed  the following analytic expression for $C_0$, assumed valid only for $0.1 < t/d_h < 3.0$: 
+
+$$
+  C_0 = 0.5 + \frac{0.178}{4 \cdot (t/d_h)^2 + 0.355}
+$$
+
+While $C_C$ can be evaluated by:
+
+$$
+  C_C = 0.596 + 0.0031 \cdot e^{(\beta / 0.206)}
+$$
+
+In fully turbulent conditions, pressure loss is mainly due to the contraction and expansion of the jets, which is strongly dependent on the porosity of the plate. In literature, it is usually referred the diameter ratio $\beta$, defined as the  square root of the overall porosity:
+
+$$
+ \beta = \frac{d_h}{D} \cdot \sqrt{n_h}
+$$
+
+In which $n_h$ is the number of the holes, $d_h$ is the diameter of a single hole, and $D$ is the diameter of the duct. 
+
+## Cavitation occurrence in perforated plates
+
+This part particularly providing further information related to cavitation inception in differently shaped perforated plates.
+
+Cavitation can be roughly considered the rapid vaporization and condensation of water caused by a sudden pressure reduction. According to the ISA standard, different cavitation regimes can be identified measuring the indirect effects induced by cavitation phenomena in a hydraulic system, as the vibration: 
+
+  1) REGIME I: absence of cavitation; 
+
+  2) REGIME II: incipient cavitation, the onset of cavitation, where only tiny vapor bubbles are formed in the flow stream. This condition is detected when an increased vibration level occurs after the collapse of the bubbles and the condensation of the vapor; 
+
+  3) REGIME III: stable cavitation, involving a sufficiently large volume of vapor to produce a uniform and continuous level of cavitation; 
+
+  4) REGIME IV: maximum vibration, that is, the level of cavitation associated with the occurrence of choking condition. The cavitation level causing damage to a device is hard to define and is usually indicated based on experience. 
+
+Clearly, the more conservative choice restricts all operations to a cavitation-free regime even if typically the incipient cavitation level (REGIME II) may be acceptable in the design phase.
+
+Cavitation is usually studied utilizing the cavitation number for which several definitions exist. Hereafter, the following cavitation parameter definition, as proposed by the ISA standard, will be used:
+
+$$
+  \sigma = \frac{P_1 - P_v}{P_1 - P_2 }
+$$
+
+Where $P_1$ and $P_2$ are the pressures measured sufficiently far upstream and downstream the device, to provide reliable values of the gross pressure drop, PV is the vapor pressure. Similar definitions of the cavitation number, related to the above-mentioned ones, are:
+
+$$
+  \sigma_2 = \frac{P_2 - P_v}{P_1 - P_2 } = \sigma -1 
+$$
+
+$$
+  \sigma_v = \frac{P_1- P_v}{1/2 \cdot \rho \cdot V^2} 
+$$
+
+where $\rho$ is the fluid density, $V$ is the pipe bulk-mean velocity, and
+
+$$
+Eu =\frac{P_1-P_2}{\rho \cdot V^2}  
+$$
+is the [Euler number](https://en.wikipedia.org/wiki/Euler_number_(physics)).
+
+It is necessary to identify and provide experimental data for several cavitation intensity levels to have adequate information for analysis and design.  There are defined six different cavitation design limits. The methods used to determine each limit experimentally are described, and suggestions are given when each limit might be appropriate. These limits are:
+
+  - incipient cavitation $σ_i$;
+  - constant cavitation $σ_c$;
+  - incipient damage $σ_{id}$;
+  - Manufacturer's recommended limit $σ_{mr}$; 
+  - maximum vibration cavitation $σ_{mv}$; and
+  - choking cavitation $σ_{cℎ}$
+
+**Incipient damage $σ_{id}$:** A cavitation level sufficient to begin minor, observable indications of pitting damage.
+
+**Constant cavitation $σ_c$:** An early cavitation level characterized by mild, steady popping or crackling sounds that may be audible or detected by vibration measurements. It is the next higher inflection point on the cavitation profile above the point of incipient cavitation. (See Figure) The constant cavitation coefficient σ_c  represents this level.
+
+  - More regular cavitation events
+  - Lower frequency sound and vibration sensed: “rumbling” sound
+  - Some damage to surfaces may occur: dependent upon valve and trim styles, and materials.
+
+**Manufacturer's recommended cavitation limit $σ_{mr}$:** An operational limit expressed as a cavitation coefficient $σ_{mr}$; supplied by the valve manufacturer for a given valve type, size, opening, and reference upstream pressure. Application of the limit may require scale effect and influence factors if the service conditions and valve size are different than for the reference pressure and size.
+
+**Maximum vibration cavitation σ_{mv}:** The cavitation level associated with peak vibration measurements and determined from a cavitation level plot at the peak separating Regime III and Regime IV. The test conditions at this point define the conditions for calculating the valve cavitation coefficient $σ_{mv}$  (See Figure).
+
+  - Highest vibration amplitude: sounds like “marbles” or “gravel”
+  - Vigorous, large scale cavitation
+  - Predicted by steady flow pressure distribution ($F_L$)
+  - Very high damage potential
+
+**Choking cavitation $σ_{ch}$:** A limiting flow condition in which vapor formation is enough to limit the valve's flow rate to some maximum value. Further increases in flow rate through the valve are only possible by increasing the valve inlet pressure because reducing downstream pressure will no longer increase the flow rate  (See Figure).
+
+```{r cavitation_01, echo=FALSE, fig.cap=" Identification of the cavitation regimes and limits according to the ISA standard"}
+  knitr::include_graphics(here::here("image","cavitation_01.png"))
+```
+
+```{r cavitation_02, echo=FALSE, fig.cap=" Identification of the cavitation regimes and limits according to the ISA standard"}
+  knitr::include_graphics(here::here("image","cavitation_02.png"))
+```
+
+The incipient cavitation number is likely to be affected by the geometrical characteristics of the devices, expressed by the following parameters: 
+
+  (1) the porosity of the screen, that is, the ratio of the open area to the overall pipe section, usually expressed using the equivalent diameter ratio $\beta$ ; 
+
+  (2) the plate thickness $t$, usually taken into account using the dimensionless relative thickness $t/d_h$, $d_h$ being the hole diameter; 
+  
+  (3) the number of holes $n_h$; 
+
+  (4) the distribution of the holes and their shape, as well as the chamfering of their edges.
+  
+
+This document will consider cylinders with circular holes of uniform size, with a negligible radius of curvature at the edges of the holes considered. Although its influence is not analyzed in the present work, we underline that the shape of the holes is a crucial factor since the chamfering of the edges may result in a significant variation of the incipient cavitation number.
+
+The incipient cavitation number of perforated plates increases with $\beta$ for $0.32 \leq \beta \leq 0.66$, meaning that cavitation inception is more likely to occur in plates with higher porosity. 
+Nevertheless, the effect of the relative thickness $t/d_h$ on $\sigma_i$ does not appear wholly clarified yet. Some studies found that the trend of $\sigma_i$ as a function of $t/d_h$ increases until $t/dh \approx 1$ and decreases for longer orifices. The authors related this behavior to the transition within the holes between separated and reattached flows. The dependence of $\sigma_i$ upon $n_h$, the other parameters being the same, has never been systematically studied, and the influence of the shape, distribution, and chamfering of the holes.
+
+Pressure and size scale effects should also be considered when investigating the cavitation in the hydraulic devices. The former result consists of the possible influence of the operating pressure on the cavitation limits. Anyway, several researchers agreed that there are no pressure scale effects associated with incipient cavitation in perforated plates. Conversely, extensive research demonstrated that size scale effects are not negligible, with $\sigma_i$ increasing with the pipe diameter. The following adjustment to account for size scale effects is proposed:
+
+$$
+  SSE = \left( \frac{D}{D_{ref}} \right)^Y \; \; Y= 0.3 \cdot Eu^{-0.25} 
+$$
+
+in which $D_{ref}$ is a reference pipe diameter.
+
+Different approaches can be used to estimate the incipient cavitation number of perforated plates. In particular, different physics-based models have been proposed.
+In both of them, the discharge coefficient $C_d$, as defined by the next equation, appears among the independent variables:
+
+$$
+  C_d = \frac{V}{\sqrt{2 \cdot (P_1 -P_2)/ \rho + V²}} = \frac{1}{\sqrt{Eu +1}}
+$$
+$C_d$ has the same functional dependencies as $Eu$, which is a function of the equivalent diameter ratio $\beta$, the relative thickness $t/d_h$, the number $n_h$, the disposition of the holes, and the Reynolds number of the hole $Re_h = v_h \cdot d_h/ \nu$; where $v_h$ is the average fluid velocity within the holes, and $\nu$ is the kinematic viscosity coefficient of the fluid. However, it is well known that the Euler number (and, consequently, the discharge coefficient) of perforated plates remains essentially constant within a specific range of $Re_h$.
+
+Based on the different investigations and publications analysis, a formula relating $\sigma_i / SSE$ to $C_d$ provides the best explanation of the data and, therefore, can obtain reliable estimations of the incipient cavitation number perforated plates. 
+
+$$
+  \frac{\sigma_i}{SSE} = 2.10 + 6.75 \cdot C_d - 1.99 \ C_d^2 + 4.55 \cdot C_d^3
+$$
+This function applies to single- and multi-hole orifices with diameter ratios $\beta$ between $0.17$ and $0.88$, relative thickness $t/d_h$ up to $4.40$, and holes $n_h$ up to $1,793$. The discharge coefficient $C_d$ varies between $0.02$ and $0.87$.
+
+
+
+## Minimum Orifice Plate Thickness Calculator
+
+Richard W. Miller: formula for orifice plate thickness calculation
+
+$$
+  t_{min} \geq DN_{interna} \cdot \sqrt{\frac{(0.681-0.651\cdot\beta)\cdot \Delta{p}}{Y}}
+$$
+
+where
+
+-   $t_{min} =$ min plate thickness $[mm]$
+-   $\beta =$ ratio of orifice hole diameter to pipe diameter
+-   $\Delta{P} =$ pressure drop $[MPa]$
+-   $Y =$ plate material yield stress $[MPa]$
+-   \$ DN\_{internal}=\$ pipe internal diameter $[mm]$
+
+# Template Control Cylinder
+
+```{r include=FALSE}
+  dn <- 200
+  df <- dim.cylinder %>% filter(dn.valve == dn)
+```
+
+```{r child = 'template_BlindCylinder.Rmd'}
+```
+
+```{r include=FALSE}
+  dn <- 300
+  df <- dim.cylinder %>% filter(dn.valve == dn)
+```
+
+```{r child = 'template_BlindCylinder.Rmd'}
+```
+
+```{r include=FALSE}
+  dn <- 500
+  df <- dim.cylinder %>% filter(dn.valve == dn)
+```
+
+```{r child = 'template_BlindCylinder.Rmd'}
+```
+
+```{r include=FALSE}
+  dn <- 600
+  df <- dim.cylinder %>% filter(dn.valve == dn)
+```
+
+```{r child = 'template_BlindCylinder.Rmd'}
+```
+
+# Cylinder drilling
+
+The total area and the number of holes to be drilled are determined proportionally to the valve area.
+
+```{r echo=FALSE}
+
+  # FUNCTION Create Tables 
+  table_drilling <- function(dt, name.tab){
+    names(dt) <- c("DN", "typ", "dn",
+                   "AR-7.5%", "AR-10%", "AR-12.5%", "AR-15%", 
+                   "AR-20%", "AR-25%", "AR-30%", "AR-35%", "AR-40%")
+    
+    dt %>% 
+     kbl(caption = name.tab) %>%
+     kable_styling(bootstrap_options = c("striped", "hover", "condensed"))%>%
+     pack_rows("Perforation - 45 Degree Staggered", 1, 4) %>%
+     pack_rows("Perforation - Straight Line", 5, 7) %>% 
+     footnote(general = "Description of the columns. ",
+              number = c("DN: Valve diameter; ", 
+                         "typ: Hole Pattern; ",
+                         "dn: Orifice diameter"))
+  }
+    
+```
+
+## Number of orifices to be drilled depending on the required area.
+
+```{r echo=FALSE}
+  dt <- tab.drill %>% 
+    select("dn.valve", "perforation", "drill.area", "dn.orifice", "n.orifice.drill") %>% 
+    pivot_wider(names_from = drill.area, values_from = n.orifice.drill) %>% 
+    arrange(perforation, dn.valve)
+
+  table_drilling(dt, "Number of orifices to be drilled depending on the required area.")
+
+```
+
+## Diameter Ratio $\beta$ at 100% opening position
+
+```{r echo=FALSE}
+  dt <- tab.drill %>% 
+    select("dn.valve", "perforation", "drill.area", "dn.orifice", "dn.radio") %>% 
+    mutate(dn.radio = round(dn.radio,2)) %>% 
+    pivot_wider(names_from = drill.area, values_from = dn.radio)%>% 
+    arrange(perforation, dn.valve)
+
+  table_drilling(dt, "Diameter Ratio")
+
+```
+
+## Loss Coefficient $\zeta$ (Zeta Value) at 100% opening position
+
+```{r echo=FALSE}
+  dt <- tab.drill %>% 
+    select("dn.valve", "perforation", "drill.area", "dn.orifice", "zeta.cylinder") %>% 
+    mutate(zeta.cylinder = round(zeta.cylinder,2)) %>% 
+    pivot_wider(names_from = drill.area, values_from = zeta.cylinder)%>% 
+    arrange(perforation, dn.valve)
+  
+  table_drilling(dt, "Loss Coefficient (Zeta Value)")
+  
+```
+
+## Flow coefficient $K_{vs}$ at 100% opening position
+
+```{r echo=FALSE}
+  dt <- tab.drill %>% 
+    select("dn.valve", "perforation", "drill.area", "dn.orifice", "kv") %>% 
+    mutate(kv = round(kv,0)) %>% 
+    pivot_wider(names_from = drill.area, values_from = kv) %>% 
+    arrange(perforation, dn.valve)
+
+  table_drilling(dt, "Flow coefficient (Kv Value) in m³/h")
+
+```
+
+## Incipient cavitation number $\sigma_i$ at 100% opening position
+
+```{r echo=FALSE}
+  dt <- tab.drill %>% 
+    select("dn.valve", "perforation", "drill.area", "dn.orifice", "sigma.i") %>% 
+    mutate(sigma.i = round(sigma.i,1)) %>% 
+    pivot_wider(names_from = drill.area, values_from = sigma.i) %>% 
+    arrange(perforation, dn.valve)
+
+  table_drilling(dt, "Incipient cavitation number")
+
+```
+
+
+## Critical cavitation number $\sigma_c$ at 100% opening position
+
+```{r echo=FALSE}
+  dt <- tab.drill %>% 
+    select("dn.valve", "perforation", "drill.area", "dn.orifice", "sigma.c") %>% 
+    mutate(sigma.c = round(sigma.c,1)) %>% 
+    pivot_wider(names_from = drill.area, values_from = sigma.c) %>% 
+    arrange(perforation, dn.valve)
+
+  table_drilling(dt, "Critical cavitation number")
+
+```
+
+# Cylinder templates for Logarithmic inherent control characteristics
+
+## DN-300; AR-7.5%
+
+```{r echo=FALSE}
+  dn        <- 300 
+  drill     <- 7.5
+  turn.down <- 50 
+  perf.typ  <- 45
+  
+  tab.valve <- cylinder.curves(tab.drill, dn, drill, turn.down, perf.typ)
+  
+  kbl(tab.valve) %>%
+    kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+```
+```{r echo=FALSE}
+  # "Prediction of cavitation in orifice plates—A novel and simple rule-of-thumb"
+  plot.curves(tab.valve, dn, drill)
+```
+
+## DN-200; AR-20%
+
+```{r echo=FALSE}
+  dn        <- 200 
+  drill     <- 20
+  turn.down <- 50 
+  perf.typ  <- 45
+  
+  tab.valve <- cylinder.curves(tab.drill, dn, drill, turn.down, perf.typ)
+  
+  kbl(tab.valve) %>%
+    kable_styling(bootstrap_options = "striped", full_width = F, position = "left")
+```
+```{r echo=FALSE}
+  # "Prediction of cavitation in orifice plates—A novel and simple rule-of-thumb"
+  plot.curves(tab.valve, dn, drill)
+```
+
+
+# References
+
+```{r child = 'referencesr.Rmd'}
+```
+
+  
