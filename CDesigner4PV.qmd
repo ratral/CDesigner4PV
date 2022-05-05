@@ -25,8 +25,9 @@ Later it will be necessary to carry out tests under laboratory conditions. The e
 
 ## Plunger valves
 
+## Cylinder Math.
 
-## Volume and Surface Area of a Cylinder
+### Volume and Surface Area of a Cylinder
 
 A cylinder is a solid figure with two parallel circles of the same size at the top and bottom. The top and bottom of a cylinder are called bases. The height $h$ of a cylinder is the distance between the two bases. We will work with all the cylinders here. The sides and the height, $h$, will be perpendicular to the bases.
 
@@ -37,4 +38,20 @@ The distance around the edge of the cylinder is the circumference of the cylinde
 $$
   L = 2 \cdot \pi \cdot r \\
   A = 2 \cdot h \cdot \pi \cdot r
-$$
+$$ 
+
+## Arc Length Formula
+
+The length of an arc can be calculated using different formulas based on the unit of the central angle of the arc. The angle is in degrees or radians, and accordingly, we calculate the arc length of a circle. For a circle, the arc length formula is $\theta$ times the radius of a circle.
+
+The arc length formula in radians can be expressed as,
+
+-   if $\theta$ is in *radian*: $arc.length = θ \cdot (dn/2)$
+
+-   if $\theta$ is in degree: $arc.length = \theta \cdot (π/180) \cdot (dn/2)$ ,
+
+where,
+
+-   $arc.length =$ Length of an Arc
+-   $\theta =$ Central angle of Arc
+-   $(dn/2) =$ Radius of the circle
