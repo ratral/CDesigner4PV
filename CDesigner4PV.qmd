@@ -2,6 +2,7 @@
 title: "White Paper: Proposal for a design of Cylinder for plunger Control Valves"
 format:
   html:
+    self-contained: true
     toc: true
     toc-depth: 2
     toc-title: Contents
@@ -9,6 +10,7 @@ format:
     number-depth: 3
     html-math-method: katex
     css: styles.css
+reference-location: margin
 ---
 
 # The purpose of this white paper
@@ -23,11 +25,7 @@ Later it will be necessary to carry out tests under laboratory conditions. The e
 
 # Basic theory
 
-## Plunger valves
-
-## Cylinder Math.
-
-### Volume and Surface Area of a Cylinder
+## Volume and Surface Area of a Cylinder
 
 A cylinder is a solid figure with two parallel circles of the same size at the top and bottom. The top and bottom of a cylinder are called bases. The height $h$ of a cylinder is the distance between the two bases. We will work with all the cylinders here. The sides and the height, $h$, will be perpendicular to the bases.
 
@@ -38,20 +36,58 @@ The distance around the edge of the cylinder is the circumference of the cylinde
 $$
   L = 2 \cdot \pi \cdot r \\
   A = 2 \cdot h \cdot \pi \cdot r
-$$ 
+$$
 
-## Arc Length Formula
+## Valve Characteristics
 
-The length of an arc can be calculated using different formulas based on the unit of the central angle of the arc. The angle is in degrees or radians, and accordingly, we calculate the arc length of a circle. For a circle, the arc length formula is $\theta$ times the radius of a circle.
+### Inherent Control Valve Flow Characteristics:
 
-The arc length formula in radians can be expressed as,
+The most common characteristics are shown in the figure above. The percent of flow through the valve is plotted against the valve stem position. The curves shown are typical of those available from valve manufacturers. These curves are based on the constant pressure drop across the valve and are called inherent flow characteristics.
 
--   if $\theta$ is in *radian*: $arc.length = θ \cdot (dn/2)$
+-   **Linear** - flow capacity increases linearly with valve travel.
+-   **Equal percentage** - flow capacity increases exponentially with valve trim travel. Equal increments of valve travel produce equal percentage changes in the existing $K_v$.
+-   A **modified parabolic characteristic** is approximately midway between linear and equal-percentage characteristics. It provides fine throttling at low flow capacity and approximately linear characteristics at higher flow capacity.
+-   Hyperbolic
+-   Square Root
 
--   if $\theta$ is in degree: $arc.length = \theta \cdot (π/180) \cdot (dn/2)$ ,
+The majority of control applications are with valves with linear, equal-percentage, or modified-flow characteristics.
 
-where,
+The inherent valve characteristics for an equal percentage valve are exponential and are usually simplified by valve manufacturers in the form:
 
--   $arc.length =$ Length of an Arc
--   $\theta =$ Central angle of Arc
--   $(dn/2) =$ Radius of the circle
+$$
+  f(x)= R^{(x-1)}
+$$
+
+where $R$ is a constant for the cylinder.
+
+### Installed Control Valve Flow Characteristics
+
+When valves are installed with pumps, piping and fittings, and other process equipment, the pressure drop across the valve will vary as the plug moves through its travel. The curve is called the Installed Flow Characteristic when the actual flow is plotted against the valve opening. In most applications, when the valve opens and the resistance due to fluid flow decreases, the pressure drop across the valve.
+
+These are the differences between the inherent and installed characteristics of a control valve: - A linear curve as an inherent Flow characteristic will generally reflect an Installed Flow characteristic of a fast opening. - An equal percentage curve as inherent flow characteristics will generally reflect a linear Installed flow characteristic.
+
+There is not one flow characteristic that is better than the other. It is your goal to achieve the desired characteristic.
+
+**Linear installed Characteristics:**
+
+-   Used in liquid level or flow loops.
+-   Used in systems where the pressure drop across the valve is expected to remain relatively constant (i.e., steady-state systems).
+-   Used when the pressure drop across the valve is a large proportion of the total pressure drop.
+
+**Equal Percentage installed Characteristics:**
+
+-   Used in processes where significant changes in pressure drop are expected.
+-   Used in processes where the valve permits a small percentage of the total pressure drop.
+-   Used in temperature and pressure control loops.
+
+**Quick Opening installed Characteristics:**
+
+-   Used for frequent on-off service.
+-   Used for processes where "instantly" large flow is needed (i.e., safety systems or cooling water systems).
+
+**Two rules of thumb for choosing the correct flow characteristic:**
+
+-   If most pressure drops are taken through the valve and the upstream pressure is constant, a linear characteristic will better control.
+-   If the piping and downstream equipment cause significant resistance to the system, the equal percentage will provide better control.
+
+## Pressure losses through perforated plates
